@@ -1,0 +1,68 @@
+<html>
+<title>Struct constructor/initializers highp bug.</title>
+<script type="application/javascript">
+    "use strict"; 
+    var canvas = document.getElementById('canvas');
+    var gl = canvas.getContext('webgl');
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.clearColor(0, 0, 1, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    var vs = gl.createShader(gl.VERTEX_SHADER);
+    var vs_code =`
+        attribute vec4 pos;
+        void main(){
+            gl_Position = pos;
+        }
+    `;
+    gl.shaderSource(vs, vs_code);
+    gl.compileShader(vs);
+
+    var fs = gl.createShader(gl.FRAGMENT_SHADER);
+    var fs_code =`
+        precision highp float;
+        struct Test {
+             vec3 color;
+         };
+         void main() {
+             vec3 color = vec3( 6378137.0, 0.0, 0.0 );
+             Test test;
+             test.color = color;
+             if (test.color.x == 6000000.0) {
+                gl_FragColor = vec4( 1.0, 0.0, 0.0, 1.0 );
+             } else {
+                gl_FragColor = vec4( 0.0, 1.0, 0.0, 1.0 );
+             }
+         }
+    `;
+    gl.shaderSource(fs, fs_code);
+    gl.compileShader(fs);
+
+    var prg = gl.createProgram();
+    gl.attachShader(prg, vs);
+    gl.attachShader(prg, fs);
+    gl.linkProgram(prg);
+    gl.useProgram(prg);
+
+    var posLocation = gl.getAttribLocation(prg, 'pos');
+    gl.enableVertexAttribArray(posLocation);
+
+    var vertex = new Float32Array([
+        -0.8, -0.8, 0,
+        -0.8, 0.8, 0,
+        0.8, 0.8, 0,
+        0.8, -0.8, 0
+    ]);
+
+    var index = new Uint8Array([0, 2, 1, 0, 3, 2]);
+
+    var vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, vertex, gl.STATIC_DRAW);
+    gl.vertexAttribPointer(posLocation, 3, gl.FLOAT, false, 0, 0);
+
+    var indexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, index, gl.STATIC_DRAW);
+    gl.drawElements(gl.TRIANGLES, index.length, gl.UNSIGNED_BYTE, 0);
+</script>
+</html>
