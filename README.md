@@ -1,0 +1,1 @@
+# struct-init-test-on-qualcomm-platform
